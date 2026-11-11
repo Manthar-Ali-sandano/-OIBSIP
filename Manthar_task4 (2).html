@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nikola Tesla · The Man Who Lit the Future</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* ---------- RESET & VARIABLES ---------- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --ink: #0B0B12;
+      --ink-soft: #14141F;
+      --paper: #F7F2E9;
+      --paper-dark: #EFE7D8;
+      --gold: #C9A227;
+      --gold-light: #E8C766;
+      --gold-deep: #8A6D1F;
+      --electric: #4FC3F7;
+      --electric-deep: #0D6E8C;
+      --crimson: #8B2E2E;
+      --text-dark: #1E1E28;
+      --text-muted: #5C5C6E;
+      --font-display: 'Playfair Display', serif;
+      --font-serif: 'Cormorant Garamond', serif;
+      --font-sans: 'Inter', sans-serif;
+      --transition-smooth: 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--ink);
+      color: var(--paper);
+      overflow-x: hidden;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* =========================================================
+       GATE SCREEN — the interactive reveal
+       ========================================================= */
+    #gate {
+      position: fixed;
+      inset: 0;
+      z-index: 9000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(ellipse at 30% 20%, rgba(79, 195, 247, 0.08), transparent 55%),
+        radial-gradient(ellipse at 75% 80%, rgba(201, 162, 39, 0.10), transparent 55%),
+        linear-gradient(160deg, #05050A 0%, #0B0B12 50%, #0A0A14 100%);
+      overflow: hidden;
+      transition: opacity 1s var(--transition-smooth), visibility 1s var(--transition-smooth);
+    }
+
+    /* When the page opens, the gate fades away */
+    #gate.revealed {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    /* Slow rotating "electric field" rings behind the card */
+    .gate-rings {
+      position: absolute;
+      width: 900px;
+      height: 900px;
+      border-radius: 50%;
+      border: 1px solid rgba(79, 195, 247, 0.10);
+      animation: ringRotate 40s linear infinite;
+      pointer-events: none;
+    }
+
+    .gate-rings::before,
+    .gate-rings::after {
+      content: '';
+      position: absolute;
+      inset: 80px;
+      border-radius: 50%;
+      border: 1px dashed rgba(201, 162, 39, 0.12);
+    }
+
+    .gate-rings::after {
+      inset: 180px;
+      border-style: dotted;
+      border-color: rgba(79, 195, 247, 0.18);
+      animation: ringRotate 25s linear infinite reverse;
+    }
+
+    @keyframes ringRotate {
+      to { transform: rotate(360deg); }
+    }
+
+    .gate-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2.5rem;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .gate-eyebrow {
+      font-family: var(--font-sans);
+      font-size: 0.78rem;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      opacity: 0;
+      animation: fadeUp 1s ease 0.3s forwards;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ----- The portrait card that shines & slides aside on hover ----- */
+    .portrait-card {
+      position: relative;
+      width: min(340px, 74vw);
+      aspect-ratio: 3 / 4;
+      border-radius: 20px;
+      cursor: pointer;
+      overflow: hidden;
+      background: #0E0E18;
+      border: 1px solid rgba(201, 162, 39, 0.35);
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.04),
+        0 30px 80px rgba(0, 0, 0, 0.7),
+        0 0 60px rgba(79, 195, 247, 0.12);
+      transition:
+        transform 0.9s cubic-bezier(0.23, 1, 0.32, 1),
+        box-shadow 0.9s cubic-bezier(0.23, 1, 0.32, 1),
+        border-color 0.9s ease;
+      animation: cardRise 1.2s cubic-bezier(0.23, 1, 0.32, 1) 0.5s both;
+      outline: none;
+    }
+
+    @keyframes cardRise {
+      from { opacity: 0; transform: translateY(50px) scale(0.94); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .portrait-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      filter: grayscale(0.85) contrast(1.08) brightness(0.95);
+      transition: filter 0.9s ease, transform 1.2s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    /* Dark gradient overlay for text legibility */
+    .portrait-overlay {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(to top, rgba(5, 5, 10, 0.92) 0%, rgba(5, 5, 10, 0.25) 45%, transparent 70%);
+      pointer-events: none;
+      transition: opacity 0.9s ease;
+    }
+
+    .portrait-caption {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 1.6rem 1.4rem;
+      text-align: left;
+      transform: translateY(6px);
+      transition: transform 0.9s var(--transition-smooth);
+    }
+
+    .portrait-caption h2 {
+      font-family: var(--font-display);
+      font-size: 1.7rem;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: 0.5px;
+      line-height: 1.15;
+    }
+
+    .portrait-caption p {
+      font-family: var(--font-sans);
+      font-size: 0.72rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      margin-top: 0.4rem;
+    }
+
+    /* The shining light sweep */
+    .portrait-card::after {
+      content: '';
+      position: absolute;
+      top: -150%;
+      left: -60%;
+      width: 60%;
+      height: 400%;
+      background: linear-gradient(
+        115deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.0) 30%,
+        rgba(255, 255, 255, 0.55) 50%,
+        rgba(201, 162, 39, 0.35) 55%,
+        rgba(255, 255, 255, 0.0) 70%,
+        transparent 100%
+      );
+      transform: rotate(18deg);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    /* HOVER: shine + slide aside + zoom */
+    .portrait-card:hover,
+    .portrait-card:focus-visible {
+      transform: translateX(26vw) scale(1.04) rotate(1.5deg);
+      border-color: rgba(232, 199, 102, 0.9);
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.15),
+        0 40px 110px rgba(0, 0, 0, 0.85),
+        0 0 90px rgba(201, 162, 39, 0.45),
+        0 0 160px rgba(79, 195, 247, 0.25);
+    }
+
+    .portrait-card:hover::after,
+    .portrait-card:focus-visible::after {
+      opacity: 1;
+      animation: shineSweep 1.2s ease-in-out infinite;
+    }
+
+    @keyframes shineSweep {
+      0% { top: -150%; left: -60%; }
+      100% { top: -150%; left: 140%; }
+    }
+
+    .portrait-card:hover img {
+      filter: grayscale(0.1) contrast(1.05) brightness(1.03);
+      transform: scale(1.06);
+    }
+
+    .portrait-card:hover .portrait-overlay {
+      opacity: 0.85;
+    }
+
+    .portrait-card:hover .portrait-caption {
+      transform: translateY(0);
+    }
+
+    /* Tap / click hint below the card */
+    .gate-hint {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-sans);
+      font-size: 0.8rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(247, 242, 233, 0.55);
+      opacity: 0;
+      animation: fadeUp 1s ease 1.3s forwards;
+    }
+
+    .gate-hint i {
+      color: var(--gold-light);
+      animation: hintPulse 2.2s ease-in-out infinite;
+    }
+
+    @keyframes hintPulse {
+      0%, 100% { transform: scale(1); opacity: 0.7; }
+      50% { transform: scale(1.25); opacity: 1; }
+    }
+
+    /* =========================================================
+       MAIN TRIBUTE PAGE (hidden until gate revealed)
+       ========================================================= */
+    #tribute {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 1.2s ease 0.2s, transform 1.2s cubic-bezier(0.23, 1, 0.32, 1) 0.2s;
+      position: relative;
+      visibility: hidden;
+    }
+
+    #tribute.open {
+      opacity: 1;
+      transform: translateY(0);
+      visibility: visible;
+    }
+
+    /* A one-time light sweep across the whole page on open */
+    #tribute .page-shine {
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        105deg,
+        transparent 0%,
+        transparent 40%,
+        rgba(255, 255, 255, 0.14) 50%,
+        rgba(201, 162, 39, 0.10) 55%,
+        transparent 70%,
+        transparent 100%
+      );
+      pointer-events: none;
+      z-index: 500;
+      opacity: 0;
+    }
+
+    #tribute.open .page-shine {
+      animation: pageSweep 2.2s ease-out 0.7s forwards;
+    }
+
+    @keyframes pageSweep {
+      0% { left: -100%; opacity: 0; }
+      20% { opacity: 1; }
+      100% { left: 100%; opacity: 0; }
+    }
+
+    /* ---------- HEADER / HERO ---------- */
+    .hero {
+      background:
+        radial-gradient(ellipse at 20% 0%, rgba(79, 195, 247, 0.10), transparent 50%),
+        radial-gradient(ellipse at 85% 100%, rgba(201, 162, 39, 0.10), transparent 50%),
+        linear-gradient(170deg, #0B0B12 0%, #11111B 60%, #0B0B12 100%);
+      padding: clamp(4rem, 10vw, 8rem) clamp(1.2rem, 5vw, 4rem) clamp(3.5rem, 8vw, 6rem);
+      text-align: center;
+      position: relative;
+      border-bottom: 1px solid rgba(201, 162, 39, 0.18);
+    }
+
+    .hero-eyebrow {
+      font-family: var(--font-sans);
+      font-size: 0.78rem;
+      letter-spacing: 7px;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(3rem, 9vw, 7rem);
+      font-weight: 600;
+      line-height: 1.02;
+      letter-spacing: -0.02em;
+      background: linear-gradient(180deg, #FFFFFF 30%, var(--gold-light) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1.2rem;
+    }
+
+    .hero-tagline {
+      font-family: var(--font-serif);
+      font-size: clamp(1.2rem, 2.6vw, 1.75rem);
+      font-style: italic;
+      font-weight: 400;
+      color: rgba(247, 242, 233, 0.75);
+      max-width: 700px;
+      margin: 0 auto 2rem;
+      line-height: 1.5;
+    }
+
+    .hero-meta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      color: rgba(247, 242, 233, 0.5);
+      letter-spacing: 1px;
+    }
+
+    .hero-meta .dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--gold);
+    }
+
+    /* Divider ornament */
+    .ornament {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin: 2.5rem auto 0;
+      max-width: 320px;
+    }
+
+    .ornament .line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+
+    .ornament i {
+      color: var(--gold);
+      font-size: 0.9rem;
+    }
+
+    /* ---------- PORTRAIT / MAIN IMAGE SECTION ---------- */
+    .portrait-section {
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(79, 195, 247, 0.06), transparent 60%),
+        var(--ink-soft);
+      padding: clamp(3rem, 7vw, 5.5rem) clamp(1.2rem, 5vw, 4rem);
+      position: relative;
+      border-bottom: 1px solid rgba(201, 162, 39, 0.12);
+    }
+
+    .portrait-wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: clamp(2rem, 5vw, 4.5rem);
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .portrait-image {
+      flex: 0 1 360px;
+      position: relative;
+    }
+
+    .portrait-image::before {
+      content: '';
+      position: absolute;
+      inset: -18px;
+      border: 1px solid rgba(201, 162, 39, 0.35);
+      border-radius: 4px;
+      transition: inset 0.6s var(--transition-smooth), border-color 0.6s ease;
+      pointer-events: none;
+    }
+
+    .portrait-image:hover::before {
+      inset: -24px;
+      border-color: rgba(201, 162, 39, 0.7);
+    }
+
+    .portrait-image img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 2px;
+      filter: grayscale(0.55) contrast(1.05);
+      transition: filter 0.7s ease;
+      box-shadow: 0 30px 70px rgba(0, 0, 0, 0.55);
+    }
+
+    .portrait-image:hover img {
+      filter: grayscale(0) contrast(1.02);
+    }
+
+    .portrait-image figcaption {
+      font-family: var(--font-sans);
+      font-size: 0.72rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 1.2rem;
+    }
+
+    .portrait-quote {
+      flex: 1 1 380px;
+      max-width: 560px;
+    }
+
+    .portrait-quote .mini-label {
+      font-family: var(--font-sans);
+      font-size: 0.72rem;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .portrait-quote .mini-label::before {
+      content: '';
+      width: 30px;
+      height: 1px;
+      background: var(--gold);
+    }
+
+    .portrait-quote h2 {
+      font-family: var(--font-display);
+      font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+      font-weight: 600;
+      line-height: 1.15;
+      color: var(--paper);
+      margin-bottom: 1.2rem;
+    }
+
+    .portrait-quote p {
+      font-family: var(--font-serif);
+      font-size: 1.2rem;
+      color: rgba(247, 242, 233, 0.72);
+      line-height: 1.7;
+    }
+
+    /* ---------- BIOGRAPHY SECTION (paper background — 2nd bg colour) ---------- */
+    .biography {
+      background: var(--paper);
+      color: var(--text-dark);
+      padding: clamp(3.5rem, 8vw, 6.5rem) clamp(1.2rem, 5vw, 4rem);
+      position: relative;
+    }
+
+    .biography-inner {
+      max-width: 820px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-family: var(--font-sans);
+      font-size: 0.72rem;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      color: var(--crimson);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(139, 46, 46, 0.4), transparent);
+    }
+
+    .biography h2 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4.5vw, 3.2rem);
+      font-weight: 600;
+      line-height: 1.1;
+      color: var(--ink);
+      margin-bottom: 2rem;
+      letter-spacing: -0.01em;
+    }
+
+    .biography p {
+      font-family: var(--font-serif);
+      font-size: clamp(1.12rem, 1.6vw, 1.28rem);
+      line-height: 1.85;
+      color: #2C2C38;
+      margin-bottom: 1.5rem;
+    }
+
+    .biography p:first-of-type::first-letter {
+      font-family: var(--font-display);
+      font-size: 3.8rem;
+      font-weight: 700;
+      float: left;
+      line-height: 0.85;
+      padding: 0.1rem 0.75rem 0 0;
+      color: var(--crimson);
+    }
+
+    /* ---------- QUOTE BLOCK (distinct styling) ---------- */
+    .quote-block {
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(79, 195, 247, 0.10), transparent 55%),
+        linear-gradient(135deg, #0E0E18 0%, #16161F 100%);
+      padding: clamp(3.5rem, 9vw, 6.5rem) clamp(1.2rem, 5vw, 4rem);
+      position: relative;
+      overflow: hidden;
+      border-top: 1px solid rgba(201, 162, 39, 0.15);
+      border-bottom: 1px solid rgba(201, 162, 39, 0.15);
+    }
+
+    .quote-block::before {
+      content: '\201C';
+      position: absolute;
+      top: -3rem;
+      left: 3%;
+      font-family: var(--font-display);
+      font-size: 26rem;
+      line-height: 1;
+      color: rgba(201, 162, 39, 0.07);
+      pointer-events: none;
+    }
+
+    .quote-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .quote-mark-icon {
+      color: var(--gold);
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+      display: inline-block;
+    }
+
+    blockquote {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 3.8vw, 2.5rem);
+      font-style: italic;
+      font-weight: 400;
+      line-height: 1.45;
+      color: var(--paper);
+      margin-bottom: 2rem;
+      quotes: none;
+    }
+
+    blockquote em {
+      color: var(--gold-light);
+      font-style: italic;
+      position: relative;
+    }
+
+    .quote-attribution {
+      font-family: var(--font-sans);
+      font-size: 0.82rem;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .quote-attribution::before,
+    .quote-attribution::after {
+      content: '';
+      width: 40px;
+      height: 1px;
+      background: rgba(201, 162, 39, 0.5);
+    }
+
+    /* ---------- TIMELINE SECTION ---------- */
+    .timeline-section {
+      background: var(--paper-dark);
+      color: var(--text-dark);
+      padding: clamp(3.5rem, 8vw, 6.5rem) clamp(1.2rem, 5vw, 4rem);
+    }
+
+    .timeline-inner {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .timeline-section h2 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4.5vw, 3rem);
+      font-weight: 600;
+      line-height: 1.1;
+      color: var(--ink);
+      margin-bottom: 0.6rem;
+      letter-spacing: -0.01em;
+    }
+
+    .timeline-section .timeline-sub {
+      font-family: var(--font-serif);
+      font-size: 1.15rem;
+      font-style: italic;
+      color: var(--text-muted);
+      margin-bottom: 3rem;
+    }
+
+    /* Vertical timeline with cards */
+    .timeline {
+      list-style: none;
+      position: relative;
+      padding-left: 2.5rem;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background: linear-gradient(180deg, var(--crimson), var(--gold), var(--electric-deep));
+      opacity: 0.45;
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 2.2rem;
+      padding: 1.4rem 1.6rem;
+      background: #FFFFFF;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 4px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+      transition: transform 0.4s var(--transition-smooth), box-shadow 0.4s ease, border-color 0.4s ease;
+    }
+
+    .timeline-item:hover {
+      transform: translateX(8px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.10);
+      border-color: rgba(139, 46, 46, 0.25);
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -2.5rem;
+      top: 1.9rem;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--paper-dark);
+      border: 2px solid var(--crimson);
+      transform: translateX(-1px);
+      box-shadow: 0 0 0 4px var(--paper-dark);
+      transition: background 0.4s ease, border-color 0.4s ease;
+    }
+
+    .timeline-item:hover::before {
+      background: var(--gold);
+      border-color: var(--gold-deep);
+    }
+
+    .timeline-year {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--crimson);
+      margin-bottom: 0.4rem;
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
+    }
+
+    .timeline-year span {
+      font-family: var(--font-sans);
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .timeline-item h3 {
+      font-family: var(--font-serif);
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 0.4rem;
+      line-height: 1.3;
+    }
+
+    .timeline-item p {
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+
+    /* ---------- FOOTER ---------- */
+    .tribute-footer {
+      background: var(--ink);
+      color: rgba(247, 242, 233, 0.6);
+      text-align: center;
+      padding: clamp(2.5rem, 6vw, 4rem) 1.5rem;
+      border-top: 1px solid rgba(201, 162, 39, 0.15);
+    }
+
+    .tribute-footer .footer-ornament {
+      color: var(--gold);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .tribute-footer .footer-ornament::before,
+    .tribute-footer .footer-ornament::after {
+      content: '';
+      width: 50px;
+      height: 1px;
+      background: rgba(201, 162, 39, 0.4);
+    }
+
+    .tribute-footer p {
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+      max-width: 560px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    .tribute-footer .credit {
+      font-size: 0.72rem;
+      color: rgba(247, 242, 233, 0.35);
+      margin-top: 1.2rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    /* ---------- RESPONSIVE ---------- */
+    @media (max-width: 768px) {
+      .portrait-card:hover,
+      .portrait-card:focus-visible {
+        transform: translateY(-12px) scale(1.03);
+      }
+
+      .portrait-wrap {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .portrait-quote .mini-label {
+        justify-content: center;
+      }
+
+      .portrait-quote .mini-label::before {
+        display: none;
+      }
+
+      .timeline {
+        padding-left: 2rem;
+      }
+
+      .timeline-item::before {
+        left: -2rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hero h1 {
+        font-size: 2.6rem;
+      }
+
+      .gate-rings {
+        width: 600px;
+        height: 600px;
+      }
+
+      .quote-block::before {
+        font-size: 16rem;
+      }
+    }
+
+    /* ---------- REDUCED MOTION ---------- */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       GATE SCREEN — portrait card that shines & slides aside on hover
+       ============================================================ -->
+  <div id="gate">
+    <div class="gate-rings"></div>
+
+    <div class="gate-content">
+      <p class="gate-eyebrow">An homage to a visionary</p>
+
+      <div class="portrait-card" id="portraitCard" tabindex="0" role="button" aria-label="Open the tribute page">
+        <!-- Fixed image: High-quality accessible Wikimedia Commons portrait -->
+        <img
+          src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Tesla_circa_1890.jpeg/600px-Tesla_circa_1890.jpeg"
+          alt="Portrait of Nikola Tesla, c. 1890"
+          loading="eager"
+        >
+        <div class="portrait-overlay"></div>
+        <div class="portrait-caption">
+          <h2>Nikola Tesla</h2>
+          <p>1856 — 1943</p>
+        </div>
+      </div>
+
+      <div class="gate-hint">
+        <i class="fas fa-hand-pointer"></i> Hover or tap to enter
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MAIN TRIBUTE PAGE
+       ============================================================ -->
+  <div id="tribute">
+    <div class="page-shine"></div>
+
+    <!-- HERO -->
+    <header class="hero">
+      <p class="hero-eyebrow">The Man Who Lit the Future</p>
+      <h1>Nikola Tesla</h1>
+      <p class="hero-tagline">
+        Inventor, engineer, and dreamer — the genius who imagined a world powered by
+        clean, wireless energy, and then began to build it.
+      </p>
+      <div class="hero-meta">
+        <span>Smiljan, 1856</span>
+        <span class="dot"></span>
+        <span>New York, 1943</span>
+        <span class="dot"></span>
+        <span>Alternating Current · Radio · Wireless Power</span>
+      </div>
+      <div class="ornament">
+        <span class="line"></span>
+        <i class="fas fa-bolt"></i>
+        <span class="line"></span>
+      </div>
+    </header>
+
+    <!-- PORTRAIT / MAIN IMAGE -->
+    <section class="portrait-section">
+      <div class="portrait-wrap">
+        <figure class="portrait-image">
+          <img
+            src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Tesla_circa_1890.jpeg/600px-Tesla_circa_1890.jpeg"
+            alt="Nikola Tesla in his laboratory, a black-and-white portrait from the late 19th century."
+            loading="lazy"
+          >
+          <figcaption>Nikola Tesla · Photographed c. 1890</figcaption>
+        </figure>
+
+        <div class="portrait-quote">
+          <p class="mini-label">A mind ahead of its time</p>
+          <h2>The architect of the modern electric age.</h2>
+          <p>
+            While his rivals raced to profit from electricity, Tesla was already
+            imagining a future where power travelled through the air itself — free
+            for anyone to receive. His alternating-current system became the
+            backbone of the world's grid, and his name became the unit of magnetic
+            flux density.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- BIOGRAPHY -->
+    <section class="biography">
+      <div class="biography-inner">
+        <p class="section-label">Biography</p>
+        <h2>A life spent chasing lightning.</h2>
+
+        <p>
+          Nikola Tesla was born on the night of a thunderstorm in 1856, in the
+          village of Smiljan, then part of the Austrian Empire. From his earliest
+          years he was obsessed with electricity, mechanics, and the strange
+          beauty of numbers. He studied engineering in Graz and Prague, worked
+          briefly for a telephone exchange in Budapest, and in 1884 boarded a ship
+          for New York with little more than a notebook and a handful of poems in
+          his pocket.
+        </p>
+
+        <p>
+          In America, Tesla briefly worked for Thomas Edison before the two
+          parted ways over a dispute about direct versus alternating current.
+          Tesla's AC induction motor and polyphase system won the day, powering
+          the 1893 Chicago World's Fair and convincing George Westinghouse to
+          back the technology. The result was the Niagara Falls power plant,
+          which lit Buffalo and proved that electricity could be sent over vast
+          distances.
+        </p>
+
+        <p>
+          But Tesla's ambition reached further. He experimented with wireless
+          transmission, built remote-controlled boats, and dreamed of a global
+          system of free energy. His Colorado Springs experiments produced
+          artificial lightning that could be seen miles away. Yet funding
+          eventually dried up, and his later years were spent in relative
+          obscurity in New York hotel rooms, feeding the pigeons in Bryant Park.
+        </p>
+
+        <p>
+          He died in 1943, alone and nearly forgotten. But the world he imagined
+          had already begun to take shape. Every time we plug into a wall
+          socket, listen to a radio, or use wireless technology, we are living
+          inside Tesla's vision. His legacy is not just a set of inventions — it
+          is a way of thinking: fearless, generous, and utterly convinced that
+          the future could be better.
+        </p>
+      </div>
+    </section>
+
+    <!-- QUOTE BLOCK -->
+    <section class="quote-block">
+      <div class="quote-inner">
+        <i class="fas fa-quote-left quote-mark-icon"></i>
+        <blockquote>
+          The present is theirs; the future, for which I really worked, is
+          <em>mine</em>.
+        </blockquote>
+        <div class="quote-attribution">Nikola Tesla</div>
+      </div>
+    </section>
+
+    <!-- TIMELINE -->
+    <section class="timeline-section">
+      <div class="timeline-inner">
+        <h2>Key Achievements</h2>
+        <p class="timeline-sub">A brief chronology of a remarkable life.</p>
+
+        <ul class="timeline">
+          <li class="timeline-item">
+            <div class="timeline-year">1888 <span>· The AC Motor</span></div>
+            <h3>Patents for the Alternating Current System</h3>
+            <p>Tesla received patents for his AC induction motor and transformer, which became the foundation of the modern electrical grid.</p>
+          </li>
+          <li class="timeline-item">
+            <div class="timeline-year">1891 <span>· Tesla Coil</span></div>
+            <h3>Invention of the Tesla Coil</h3>
+            <p>He developed the resonant transformer circuit known as the Tesla coil, still used today in radio and television technology.</p>
+          </li>
+          <li class="timeline-item">
+            <div class="timeline-year">1893 <span>· World's Fair</span></div>
+            <h3>Lighting the Chicago World's Fair</h3>
+            <p>Tesla and Westinghouse introduced the world to alternating current by lighting the entire fairgrounds with AC power.</p>
+          </li>
+          <li class="timeline-item">
+            <div class="timeline-year">1895 <span>· Niagara Falls</span></div>
+            <h3>The Niagara Falls Power Plant</h3>
+            <p>Tesla's AC system was installed at Niagara Falls, proving that electricity could be transmitted efficiently over long distances.</p>
+          </li>
+          <li class="timeline-item">
+            <div class="timeline-year">1899 <span>· Colorado Springs</span></div>
+            <h3>Wireless Power Experiments</h3>
+            <p>Tesla conducted experiments in Colorado Springs, creating massive artificial lightning and exploring wireless energy transmission.</p>
+          </li>
+          <li class="timeline-item">
+            <div class="timeline-year">1943 <span>· Legacy</span></div>
+            <h3>The Unit of Magnetic Flux</h3>
+            <p>The International Electrotechnical Commission named the unit of magnetic flux density the "tesla" in his honor.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="tribute-footer">
+      <div class="footer-ornament"><i class="fas fa-bolt"></i></div>
+      <p>
+        "The scientific man does not aim at an immediate result. He does not expect
+        that his advanced ideas will be readily taken up. His work is like that of
+        the planter — for the future."
+      </p>
+      <p class="credit">A tribute to Nikola Tesla · 1856 — 1943</p>
+    </footer>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const gate = document.getElementById('gate');
+      const portraitCard = document.getElementById('portraitCard');
+      const tribute = document.getElementById('tribute');
+      let isOpen = false;
+
+      // Function to open the tribute page
+      function openTribute() {
+        if (isOpen) return;
+        isOpen = true;
+        
+        // Add the 'revealed' class to the gate to fade it out
+        gate.classList.add('revealed');
+        
+        // Add the 'open' class to the tribute page to fade it in
+        tribute.classList.add('open');
+        
+        // Scroll to the top of the page when it opens
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      }
+
+      // Desktop: Hover opens the page
+      portraitCard.addEventListener('mouseenter', openTribute);
+
+      // Mobile & Accessibility: Click/Tap or Keyboard Enter opens the page
+      portraitCard.addEventListener('click', openTribute);
+      
+      // Keyboard support for accessibility
+      portraitCard.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openTribute();
+        }
+      });
+
+      // Fallback: If they click anywhere on the gate screen, it opens
+      gate.addEventListener('click', (e) => {
+        if (e.target !== portraitCard && !portraitCard.contains(e.target)) {
+          openTribute();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

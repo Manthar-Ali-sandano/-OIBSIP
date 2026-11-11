@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaskFlow · To-Do App</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* ---------- RESET & VARIABLES ---------- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-base: #0b0f19;
+      --bg-panel: rgba(255, 255, 255, 0.03);
+      --bg-panel-hover: rgba(255, 255, 255, 0.06);
+      --border-light: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(99, 102, 241, 0.5);
+      
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      
+      --accent-primary: #6366f1; /* Indigo */
+      --accent-hover: #4f46e5;
+      --accent-glow: rgba(99, 102, 241, 0.3);
+      
+      --success: #10b981;
+      --success-bg: rgba(16, 185, 129, 0.1);
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.1);
+      
+      --font-heading: 'Space Grotesk', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      
+      --radius-md: 12px;
+      --radius-lg: 24px;
+      --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ---------- BACKGROUND & LAYOUT ---------- */
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 2rem 1rem;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Ambient Background Orbs */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      z-index: -1;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+    .orb-1 {
+      top: -10%; left: -5%;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, #6366f1, transparent 70%);
+    }
+    .orb-2 {
+      bottom: -10%; right: -5%;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, #8b5cf6, transparent 70%);
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 800px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ---------- HEADER ---------- */
+    .app-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      animation: fadeDown 0.6s ease-out both;
+    }
+
+    .app-header h1 {
+      font-family: var(--font-heading);
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .app-header p {
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    /* ---------- INPUT SECTION ---------- */
+    .input-section {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 2.5rem;
+      animation: fadeUp 0.6s ease-out 0.1s both;
+    }
+
+    .input-wrapper {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-wrapper i {
+      position: absolute;
+      left: 1.2rem;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      pointer-events: none;
+      transition: color var(--transition);
+    }
+
+    .task-input {
+      width: 100%;
+      padding: 1.1rem 1rem 1.1rem 3rem;
+      font-size: 1rem;
+      font-family: var(--font-body);
+      color: var(--text-main);
+      background: var(--bg-panel);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      outline: none;
+      transition: all var(--transition);
+    }
+
+    .task-input:focus {
+      border-color: var(--accent-primary);
+      background: var(--bg-panel-hover);
+      box-shadow: 0 0 0 4px var(--accent-glow);
+    }
+
+    .task-input:focus + i,
+    .task-input:not(:placeholder-shown) + i {
+      color: var(--accent-primary);
+    }
+
+    .add-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0 1.5rem;
+      background: var(--accent-primary);
+      color: white;
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 1rem;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .add-btn:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px var(--accent-glow);
+    }
+
+    .add-btn:active {
+      transform: translateY(0);
+    }
+
+    /* ---------- LISTS GRID ---------- */
+    .lists-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      animation: fadeUp 0.6s ease-out 0.2s both;
+    }
+
+    @media (max-width: 700px) {
+      .lists-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ---------- LIST PANEL ---------- */
+    .list-panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      min-height: 300px;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .panel-title {
+      font-family: var(--font-heading);
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .panel-title i {
+      color: var(--accent-primary);
+    }
+
+    .panel-count {
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.25rem 0.6rem;
+      border-radius: 20px;
+      color: var(--text-muted);
+    }
+
+    /* Different accent for completed */
+    .list-panel.completed-panel .panel-title i {
+      color: var(--success);
+    }
+    .list-panel.completed-panel .panel-count {
+      background: var(--success-bg);
+      color: var(--success);
+    }
+
+    /* ---------- TASK LIST ---------- */
+    .task-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      flex: 1;
+    }
+
+    /* ---------- TASK ITEM ---------- */
+    .task-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      transition: all var(--transition);
+      animation: slideIn 0.3s ease-out forwards;
+    }
+
+    .task-item:hover {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateX(2px);
+    }
+
+    /* Checkbox / Toggle */
+    .task-toggle {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border: 2px solid var(--text-muted);
+      border-radius: 6px;
+      cursor: pointer;
+      flex-shrink: 0;
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition);
+      background: transparent;
+      position: relative;
+    }
+
+    .task-toggle:hover {
+      border-color: var(--accent-primary);
+    }
+
+    .task-toggle:checked {
+      background: var(--success);
+      border-color: var(--success);
+    }
+
+    .task-toggle:checked::after {
+      content: '\f00c';
+      font-family: 'Font Awesome 6 Free';
+      font-weight: 900;
+      color: white;
+      font-size: 0.75rem;
+    }
+
+    /* Task Content */
+    .task-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      min-width: 0; /* allows text truncation if needed */
+    }
+
+    .task-text {
+      font-size: 0.95rem;
+      line-height: 1.4;
+      word-break: break-word;
+      transition: all var(--transition);
+    }
+
+    /* Strikethrough for completed tasks */
+    .task-item.is-completed .task-text {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+
+    .task-time {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    /* Inline Edit Input */
+    .edit-input {
+      width: 100%;
+      font-size: 0.95rem;
+      font-family: var(--font-body);
+      padding: 0.4rem 0.6rem;
+      background: var(--bg-panel-hover);
+      border: 1px solid var(--accent-primary);
+      border-radius: 6px;
+      color: var(--text-main);
+      outline: none;
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    /* Actions */
+    .task-actions {
+      display: flex;
+      gap: 0.4rem;
+      opacity: 0.4;
+      transition: opacity var(--transition);
+    }
+
+    .task-item:hover .task-actions {
+      opacity: 1;
+    }
+
+    .action-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition);
+    }
+
+    .action-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+    }
+
+    .action-btn.delete-btn:hover {
+      background: var(--danger-bg);
+      color: var(--danger);
+    }
+
+    .action-btn.edit-btn:hover {
+      background: var(--accent-glow);
+      color: var(--accent-primary);
+    }
+
+    /* ---------- EMPTY STATE ---------- */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 2rem 1rem;
+      gap: 0.75rem;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    .empty-state i {
+      font-size: 2rem;
+      opacity: 0.5;
+    }
+
+    .empty-state p {
+      font-size: 0.9rem;
+    }
+
+    /* ---------- ANIMATIONS ---------- */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slideOut {
+      from { opacity: 1; transform: translateX(0); }
+      to { opacity: 0; transform: translateX(20px); }
+    }
+
+    .removing {
+      animation: slideOut 0.3s ease-out forwards;
+    }
+
+    /* ---------- SCROLLBAR ---------- */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* ---------- REDUCED MOTION ---------- */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Ambient Background -->
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <main class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <h1>TaskFlow</h1>
+      <p>Organize your day, one task at a time.</p>
+    </header>
+
+    <!-- Input Section -->
+    <section class="input-section">
+      <div class="input-wrapper">
+        <input 
+          type="text" 
+          id="taskInput" 
+          class="task-input" 
+          placeholder="What needs to be done?"
+          autocomplete="off"
+          maxlength="120"
+        >
+        <i class="fas fa-pen"></i>
+      </div>
+      <button id="addBtn" class="add-btn">
+        <i class="fas fa-plus"></i> Add Task
+      </button>
+    </section>
+
+    <!-- Lists Grid -->
+    <div class="lists-grid">
+      
+      <!-- Pending List Panel -->
+      <section class="list-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <i class="fas fa-list-ul"></i> Pending Tasks
+          </div>
+          <div class="panel-count" id="pendingCount">0 pending</div>
+        </div>
+        <ul class="task-list" id="pendingList">
+          <!-- Tasks injected here -->
+        </ul>
+      </section>
+
+      <!-- Completed List Panel -->
+      <section class="list-panel completed-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <i class="fas fa-check-circle"></i> Completed Tasks
+          </div>
+          <div class="panel-count" id="completedCount">0 completed</div>
+        </div>
+        <ul class="task-list" id="completedList">
+          <!-- Tasks injected here -->
+        </ul>
+      </section>
+
+    </div>
+  </main>
+
+  <script>
+    (function() {
+      'use strict';
+
+      /* ---------- STATE ---------- */
+      let tasks = [];
+
+      /* ---------- DOM ELEMENTS ---------- */
+      const taskInput = document.getElementById('taskInput');
+      const addBtn = document.getElementById('addBtn');
+      const pendingList = document.getElementById('pendingList');
+      const completedList = document.getElementById('completedList');
+      const pendingCount = document.getElementById('pendingCount');
+      const completedCount = document.getElementById('completedCount');
+
+      /* ---------- LOCAL STORAGE ---------- */
+      const STORAGE_KEY = 'taskflow_tasks_v1';
+
+      function saveTasks() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+      }
+
+      function loadTasks() {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          try {
+            tasks = JSON.parse(stored);
+          } catch (e) {
+            tasks = [];
+          }
+        }
+      }
+
+      /* ---------- UTILITIES ---------- */
+      function formatTime(isoString) {
+        const date = new Date(isoString);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        
+        const diffHours = Math.floor(diffMins / 60);
+        if (diffHours < 24) return `${diffHours}h ago`;
+        
+        return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      }
+
+      function generateId() {
+        return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+      }
+
+      /* ---------- RENDER LOGIC ---------- */
+      function render() {
+        // Filter tasks
+        const pendingTasks = tasks.filter(t => !t.completed);
+        const completedTasks = tasks.filter(t => t.completed);
+
+        // Update counts
+        pendingCount.textContent = `${pendingTasks.length} pending`;
+        completedCount.textContent = `${completedTasks.length} completed`;
+
+        // Render Pending
+        pendingList.innerHTML = '';
+        if (pendingTasks.length === 0) {
+          pendingList.innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-coffee"></i>
+              <p>All clear! Add a task to get started.</p>
+            </div>
+          `;
+        } else {
+          pendingTasks.forEach(task => {
+            pendingList.appendChild(createTaskElement(task));
+          });
+        }
+
+        // Render Completed
+        completedList.innerHTML = '';
+        if (completedTasks.length === 0) {
+          completedList.innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-clipboard-check"></i>
+              <p>Nothing completed yet. Keep going!</p>
+            </div>
+          `;
+        } else {
+          completedTasks.forEach(task => {
+            completedList.appendChild(createTaskElement(task));
+          });
+        }
+      }
+
+      /* ---------- CREATE TASK DOM ELEMENT ---------- */
+      function createTaskElement(task) {
+        const li = document.createElement('li');
+        li.className = `task-item ${task.completed ? 'is-completed' : ''}`;
+        li.dataset.id = task.id;
+
+        // Checkbox
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'task-toggle';
+        checkbox.checked = task.completed;
+        checkbox.addEventListener('change', () => toggleTask(task.id));
+
+        // Content wrapper
+        const content = document.createElement('div');
+        content.className = 'task-content';
+
+        // Text
+        const text = document.createElement('div');
+        text.className = 'task-text';
+        text.textContent = task.text;
+
+        // Time
+        const time = document.createElement('div');
+        time.className = 'task-time';
+        time.innerHTML = `<i class="far fa-clock"></i> ${formatTime(task.createdAt)}`;
+
+        content.appendChild(text);
+        content.appendChild(time);
+
+        // Actions wrapper
+        const actions = document.createElement('div');
+        actions.className = 'task-actions';
+
+        // Edit Button
+        const editBtn = document.createElement('button');
+        editBtn.className = 'action-btn edit-btn';
+        editBtn.innerHTML = '<i class="fas fa-pen"></i>';
+        editBtn.title = 'Edit task';
+        editBtn.addEventListener('click', () => startEditing(li, content, task));
+
+        // Delete Button
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'action-btn delete-btn';
+        deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+        deleteBtn.title = 'Delete task';
+        deleteBtn.addEventListener('click', () => deleteTask(task.id, li));
+
+        actions.appendChild(editBtn);
+        actions.appendChild(deleteBtn);
+
+        li.appendChild(checkbox);
+        li.appendChild(content);
+        li.appendChild(actions);
+
+        return li;
+      }
+
+      /* ---------- ACTIONS ---------- */
+
+      // Add Task
+      function addTask() {
+        const text = taskInput.value.trim();
+        if (!text) {
+          taskInput.focus();
+          return;
+        }
+
+        const newTask = {
+          id: generateId(),
+          text: text,
+          completed: false,
+          createdAt: new Date().toISOString()
+        };
+
+        tasks.unshift(newTask); // Add to beginning of array
+        saveTasks();
+        render();
+        
+        // Clear input and focus
+        taskInput.value = '';
+        taskInput.focus();
+      }
+
+      // Toggle Complete
+      function toggleTask(id) {
+        const task = tasks.find(t => t.id === id);
+        if (task) {
+          task.completed = !task.completed;
+          saveTasks();
+          
+          // Re-render completely to move between lists
+          // We could animate, but re-rendering is simplest and robust
+          render();
+        }
+      }
+
+      // Delete Task
+      function deleteTask(id, element) {
+        // Add removal animation class
+        element.classList.add('removing');
+        
+        // Wait for animation to finish before removing from state
+        setTimeout(() => {
+          tasks = tasks.filter(t => t.id !== id);
+          saveTasks();
+          render();
+        }, 250); // Matches slideOut animation duration
+      }
+
+      // Start Inline Editing
+      function startEditing(liElement, contentElement, task) {
+        // Prevent double editing
+        if (liElement.classList.contains('is-editing')) return;
+        liElement.classList.add('is-editing');
+
+        const textElement = contentElement.querySelector('.task-text');
+        const originalText = task.text;
+
+        // Create input
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'edit-input';
+        input.value = originalText;
+        input.maxLength = 120;
+
+        // Replace text with input
+        textElement.replaceWith(input);
+        input.focus();
+        // Move cursor to end
+        input.setSelectionRange(input.value.length, input.value.length);
+
+        let isSaved = false;
+
+        // Save function
+        const saveEdit = () => {
+          if (isSaved) return;
+          isSaved = true;
+
+          const newText = input.value.trim();
+          if (newText && newText !== originalText) {
+            task.text = newText;
+            saveTasks();
+          }
+          
+          // Re-render to reset the DOM and show updated text
+          render();
+        };
+
+        // Cancel function
+        const cancelEdit = () => {
+          if (isSaved) return;
+          isSaved = true;
+          render(); // Re-render original state
+        };
+
+        // Event listeners for edit input
+        input.addEventListener('blur', saveEdit);
+        
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            saveEdit();
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            cancelEdit();
+          }
+        });
+
+        // Prevent the list item from toggling when clicking inside input
+        input.addEventListener('click', (e) => e.stopPropagation());
+      }
+
+      /* ---------- EVENT LISTENERS ---------- */
+      addBtn.addEventListener('click', addTask);
+
+      taskInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          addTask();
+        }
+      });
+
+      /* ---------- INIT ---------- */
+      loadTasks();
+      render();
+
+    })();
+  </script>
+</body>
+</html>

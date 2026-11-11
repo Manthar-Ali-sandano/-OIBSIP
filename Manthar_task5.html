@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chroma Calc · Live Color Calculator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* ---------- RESET & VARIABLES ---------- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --hue: 220;
+      --glass-bg: rgba(255, 255, 255, 0.06);
+      --glass-border: rgba(255, 255, 255, 0.12);
+      --glass-highlight: rgba(255, 255, 255, 0.2);
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.6);
+      --shadow-card: 0 30px 80px rgba(0, 0, 0, 0.6);
+      --font-display: 'Space Grotesk', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --radius-lg: 36px;
+      --radius-md: 20px;
+      --radius-sm: 14px;
+      --transition-smooth: 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    /* ---------- BODY & LIVE ANIMATED BACKGROUND ---------- */
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-body);
+      background: hsl(var(--hue), 70%, 6%);
+      padding: 1.5rem;
+      overflow: hidden;
+      position: relative;
+      transition: background 0.8s ease;
+    }
+
+    /* Live animated gradient orbs that shift hue continuously */
+    .bg-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.55;
+      z-index: 0;
+      pointer-events: none;
+      animation: orbPulse 8s ease-in-out infinite;
+    }
+
+    .orb-1 {
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, hsl(var(--hue), 90%, 60%), transparent 70%);
+      top: -20%;
+      left: -12%;
+    }
+
+    .orb-2 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, hsl(calc(var(--hue) + 60), 90%, 55%), transparent 70%);
+      bottom: -18%;
+      right: -10%;
+      animation-delay: -3s;
+    }
+
+    .orb-3 {
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, hsl(calc(var(--hue) - 60), 90%, 55%), transparent 70%);
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      animation-delay: -6s;
+    }
+
+    @keyframes orbPulse {
+      0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.5; }
+      50% { transform: scale(1.15) translate(20px, -20px); opacity: 0.7; }
+    }
+
+    /* ---------- CALCULATOR CARD ---------- */
+    .calculator {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 400px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 1.8rem;
+      box-shadow: var(--shadow-card), inset 0 1px 0 var(--glass-highlight);
+      animation: cardEntrance 0.8s cubic-bezier(0.23, 1, 0.32, 1) both;
+    }
+
+    @keyframes cardEntrance {
+      from { opacity: 0; transform: translateY(50px) scale(0.92); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* ---------- DISPLAY SCREEN ---------- */
+    .display {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-md);
+      padding: 1.5rem 1.3rem;
+      margin-bottom: 1.5rem;
+      min-height: 140px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: flex-end;
+      gap: 0.4rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color var(--transition-smooth), box-shadow var(--transition-smooth);
+    }
+
+    .display::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg,
+        hsl(var(--hue), 90%, 60%),
+        hsl(calc(var(--hue) + 120), 90%, 60%),
+        hsl(calc(var(--hue) + 240), 90%, 60%));
+      background-size: 200% 100%;
+      animation: gradientSlide 3s linear infinite;
+    }
+
+    @keyframes gradientSlide {
+      0% { background-position: 0% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    /* Expression history line (previous operation) */
+    .expression {
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      font-weight: 400;
+      color: var(--text-secondary);
+      min-height: 1.2rem;
+      word-break: break-all;
+      text-align: right;
+      transition: color var(--transition-smooth);
+    }
+
+    /* Main current input/result */
+    .current-input {
+      font-family: var(--font-display);
+      font-size: 3rem;
+      font-weight: 600;
+      line-height: 1.1;
+      color: var(--text-primary);
+      word-break: break-all;
+      text-align: right;
+      letter-spacing: -0.02em;
+      transition: color var(--transition-smooth), transform var(--transition-smooth);
+    }
+
+    .current-input.error-state {
+      color: hsl(0, 90%, 65%);
+      animation: errorShake 0.5s ease;
+    }
+
+    @keyframes errorShake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-10px); }
+      40% { transform: translateX(10px); }
+      60% { transform: translateX(-6px); }
+      80% { transform: translateX(6px); }
+    }
+
+    .current-input.result-pop {
+      animation: resultPop 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    @keyframes resultPop {
+      0% { transform: scale(0.9); opacity: 0.7; }
+      60% { transform: scale(1.03); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* ---------- BUTTON GRID (CSS GRID as required) ---------- */
+    .buttons-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+    }
+
+    /* ---------- BUTTON BASE ---------- */
+    .btn {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-sm);
+      height: 68px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition:
+        background var(--transition-smooth),
+        transform 0.12s ease,
+        box-shadow var(--transition-smooth),
+        border-color var(--transition-smooth);
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.25), transparent 70%);
+      opacity: 0;
+      transition: opacity var(--transition-smooth);
+      pointer-events: none;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.13);
+      border-color: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn:hover::before {
+      opacity: 0.5;
+    }
+
+    .btn:active {
+      transform: scale(0.94);
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    /* Ripple effect on click */
+    .btn .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.4);
+      transform: scale(0);
+      animation: rippleAnim 0.6s ease-out;
+      pointer-events: none;
+    }
+
+    @keyframes rippleAnim {
+      to {
+        transform: scale(4);
+        opacity: 0;
+      }
+    }
+
+    /* ---------- BUTTON VARIANTS ---------- */
+
+    /* Operators — warm accent (orange/pink) */
+    .btn.operator {
+      background: hsl(calc(var(--hue) + 40), 80%, 60%);
+      border-color: hsl(calc(var(--hue) + 40), 80%, 65%);
+      color: #fff;
+      font-size: 1.6rem;
+    }
+
+    .btn.operator:hover {
+      background: hsl(calc(var(--hue) + 40), 85%, 65%);
+      box-shadow: 0 8px 25px hsl(calc(var(--hue) + 40), 80%, 50% / 0.4);
+    }
+
+    .btn.operator.active-op {
+      background: hsl(calc(var(--hue) + 40), 90%, 70%);
+      box-shadow: 0 0 0 3px hsl(calc(var(--hue) + 40), 80%, 60% / 0.3);
+    }
+
+    /* Clear & Backspace — cool accent (cyan/teal) */
+    .btn.clear-btn,
+    .btn.backspace-btn {
+      background: hsl(calc(var(--hue) + 160), 70%, 50%);
+      border-color: hsl(calc(var(--hue) + 160), 70%, 55%);
+      color: #fff;
+      font-size: 1.2rem;
+    }
+
+    .btn.clear-btn:hover,
+    .btn.backspace-btn:hover {
+      background: hsl(calc(var(--hue) + 160), 75%, 55%);
+      box-shadow: 0 8px 25px hsl(calc(var(--hue) + 160), 70%, 40% / 0.4);
+    }
+
+    /* Equals — full gradient accent */
+    .btn.equals {
+      background: linear-gradient(135deg,
+        hsl(calc(var(--hue) + 60), 85%, 60%),
+        hsl(calc(var(--hue) + 140), 85%, 60%));
+      border: none;
+      color: #fff;
+      font-size: 1.7rem;
+      box-shadow: 0 8px 30px hsl(calc(var(--hue) + 100), 80%, 50% / 0.4);
+    }
+
+    .btn.equals:hover {
+      box-shadow: 0 12px 40px hsl(calc(var(--hue) + 100), 80%, 50% / 0.6);
+      transform: translateY(-2px);
+    }
+
+    .btn.equals:active {
+      transform: scale(0.94) translateY(0);
+    }
+
+    /* Zero button spans 2 columns */
+    .btn.zero {
+      grid-column: span 2;
+    }
+
+    /* Decimal point styling */
+    .btn.decimal {
+      font-size: 1.8rem;
+    }
+
+    /* ---------- FLOATING HUE CONTROLLER (unique live color feature) ---------- */
+    .hue-controller {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0.7rem 1.2rem;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 60px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      letter-spacing: 0.5px;
+      transition: transform var(--transition-smooth);
+      animation: badgeFloat 5s ease-in-out infinite;
+    }
+
+    .hue-controller:hover {
+      transform: scale(1.05);
+    }
+
+    .hue-controller i {
+      color: hsl(var(--hue), 90%, 65%);
+      font-size: 1rem;
+      animation: spinSlow 6s linear infinite;
+    }
+
+    @keyframes spinSlow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes badgeFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    /* Hue slider itself */
+    .hue-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 80px;
+      height: 6px;
+      border-radius: 3px;
+      background: linear-gradient(to right,
+        hsl(0, 90%, 60%),
+        hsl(60, 90%, 60%),
+        hsl(120, 90%, 60%),
+        hsl(180, 90%, 60%),
+        hsl(240, 90%, 60%),
+        hsl(300, 90%, 60%),
+        hsl(360, 90%, 60%));
+      outline: none;
+      cursor: pointer;
+    }
+
+    .hue-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid rgba(0,0,0,0.2);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    .hue-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .hue-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid rgba(0,0,0,0.2);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      cursor: pointer;
+    }
+
+    /* ---------- RESPONSIVE ---------- */
+    @media (max-width: 440px) {
+      .calculator {
+        padding: 1.3rem;
+        border-radius: 28px;
+      }
+
+      .btn {
+        height: 60px;
+        font-size: 1.25rem;
+      }
+
+      .btn.operator {
+        font-size: 1.4rem;
+      }
+
+      .current-input {
+        font-size: 2.4rem;
+      }
+
+      .display {
+        min-height: 120px;
+        padding: 1.2rem 1rem;
+      }
+
+      .hue-controller {
+        bottom: 1rem;
+        right: 1rem;
+        padding: 0.5rem 0.9rem;
+        font-size: 0.65rem;
+      }
+
+      .hue-slider {
+        width: 60px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .buttons-grid {
+        gap: 0.55rem;
+      }
+
+      .btn {
+        height: 54px;
+        font-size: 1.1rem;
+        border-radius: 12px;
+      }
+
+      .btn.operator {
+        font-size: 1.3rem;
+      }
+
+      .current-input {
+        font-size: 2rem;
+      }
+    }
+
+    /* ---------- REDUCED MOTION SUPPORT ---------- */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Live animated background orbs -->
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+
+  <!-- Calculator -->
+  <main class="calculator" role="application" aria-label="Calculator">
+    <!-- Display -->
+    <div class="display">
+      <div class="expression" id="expression" aria-live="polite"></div>
+      <div class="current-input" id="display" aria-live="polite">0</div>
+    </div>
+
+    <!-- Buttons Grid -->
+    <div class="buttons-grid" id="buttonsGrid">
+      <!-- Row 1 -->
+      <button class="btn clear-btn" data-action="clear" aria-label="Clear all">C</button>
+      <button class="btn backspace-btn" data-action="backspace" aria-label="Backspace">
+        <i class="fas fa-delete-left"></i>
+      </button>
+      <button class="btn operator" data-operator="%" aria-label="Modulo">%</button>
+      <button class="btn operator" data-operator="÷" aria-label="Divide">÷</button>
+
+      <!-- Row 2 -->
+      <button class="btn" data-digit="7">7</button>
+      <button class="btn" data-digit="8">8</button>
+      <button class="btn" data-digit="9">9</button>
+      <button class="btn operator" data-operator="×" aria-label="Multiply">×</button>
+
+      <!-- Row 3 -->
+      <button class="btn" data-digit="4">4</button>
+      <button class="btn" data-digit="5">5</button>
+      <button class="btn" data-digit="6">6</button>
+      <button class="btn operator" data-operator="−" aria-label="Subtract">−</button>
+
+      <!-- Row 4 -->
+      <button class="btn" data-digit="1">1</button>
+      <button class="btn" data-digit="2">2</button>
+      <button class="btn" data-digit="3">3</button>
+      <button class="btn operator" data-operator="+" aria-label="Add">+</button>
+
+      <!-- Row 5 -->
+      <button class="btn zero" data-digit="0">0</button>
+      <button class="btn decimal" data-action="decimal" aria-label="Decimal point">.</button>
+      <button class="btn equals" data-action="equals" aria-label="Equals">=</button>
+    </div>
+  </main>
+
+  <!-- Floating live hue controller -->
+  <div class="hue-controller" title="Drag to change the live theme color">
+    <i class="fas fa-palette"></i>
+    <input type="range" class="hue-slider" id="hueSlider" min="0" max="360" value="220" aria-label="Hue color slider">
+  </div>
+
+  <script>
+    (function() {
+      'use strict';
+
+      /* ---------- DOM REFERENCES ---------- */
+      const displayEl = document.getElementById('display');
+      const expressionEl = document.getElementById('expression');
+      const buttonsGrid = document.getElementById('buttonsGrid');
+      const hueSlider = document.getElementById('hueSlider');
+
+      /* ---------- CALCULATOR STATE ---------- */
+      // We build the calculator around these state variables:
+      // currentInput: the number currently being typed (string)
+      // previousValue: the stored value from before an operator (number or null)
+      // operator: the pending operator (string or null)
+      // expressionText: what to show in the expression history line
+      // justEvaluated: flag to know if last action was "=" (so typing a new digit starts fresh)
+      // waitingForOperand: flag to know if we're waiting for the next number after an operator
+      let currentInput = '0';
+      let previousValue = null;
+      let operator = null;
+      let expressionText = '';
+      let justEvaluated = false;
+      let waitingForOperand = false;
+
+      const MAX_DIGITS = 15; // Safety limit to prevent overflow
+
+      /* ---------- OPERATOR SYMBOL MAP ---------- */
+      const operatorMap = {
+        '÷': { fn: (a, b) => b === 0 ? null : a / b, symbol: '÷' },
+        '×': { fn: (a, b) => a * b, symbol: '×' },
+        '−': { fn: (a, b) => a - b, symbol: '−' },
+        '+': { fn: (a, b) => a + b, symbol: '+' },
+        '%': { fn: (a, b) => b === 0 ? null : a % b, symbol: '%' }
+      };
+
+      /* ---------- UI UPDATE ---------- */
+      function updateDisplay() {
+        // Format the current input for display
+        let displayText = currentInput;
+
+        // Handle scientific notation for very large/small numbers
+        const num = parseFloat(currentInput);
+        if (!isNaN(num) && currentInput.length > 12) {
+          if (Math.abs(num) >= 1e12 || (Math.abs(num) < 1e-6 && num !== 0)) {
+            displayText = num.toExponential(4);
+          }
+        }
+
+        // Add thousand separators for readability (optional but nice)
+        if (!displayText.includes('e') && !displayText.includes('E')) {
+          const parts = displayText.split('.');
+          parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+          displayText = parts.join('.');
+        }
+
+        displayEl.textContent = displayText;
+        expressionEl.textContent = expressionText;
+
+        // Adjust font size for long numbers
+        if (displayText.length > 10) {
+          displayEl.style.fontSize = '2rem';
+        } else if (displayText.length > 7) {
+          displayEl.style.fontSize = '2.5rem';
+        } else {
+          displayEl.style.fontSize = '3rem';
+        }
+      }
+
+      /* ---------- ERROR HANDLING ---------- */
+      function showError(message) {
+        displayEl.textContent = message;
+        displayEl.classList.add('error-state');
+        expressionEl.textContent = '';
+        // Reset state after showing error
+        setTimeout(() => {
+          displayEl.classList.remove('error-state');
+          currentInput = '0';
+          previousValue = null;
+          operator = null;
+          expressionText = '';
+          justEvaluated = false;
+          waitingForOperand = false;
+          updateDisplay();
+        }, 1500);
+      }
+
+      /* ---------- RESULT ANIMATION ---------- */
+      function animateResult() {
+        displayEl.classList.remove('result-pop');
+        void displayEl.offsetWidth; // force reflow
+        displayEl.classList.add('result-pop');
+        setTimeout(() => displayEl.classList.remove('result-pop'), 400);
+      }
+
+      /* ---------- NUMBER FORMATTING (remove floating-point noise) ---------- */
+      function formatNumber(value) {
+        // Round to 10 decimal places to avoid floating-point precision issues
+        const rounded = Math.round(value * 1e10) / 1e10;
+        // Convert to string
+        let str = rounded.toString();
+
+        // If it's an integer, return as is
+        if (Number.isInteger(rounded)) {
+          return str;
+        }
+
+        // Limit decimal places to 10, strip trailing zeros
+        if (str.includes('.')) {
+          str = str.replace(/\.?0+$/, '');
+        }
+
+        return str;
+      }
+
+      /* ---------- INPUT HANDLERS ---------- */
+
+      // Handle digit input (0-9)
+      function handleDigit(digit) {
+        if (justEvaluated) {
+          // Start a fresh calculation after pressing =
+          currentInput = digit === '.' ? '0.' : digit;
+          justEvaluated = false;
+          waitingForOperand = false;
+          expressionText = '';
+          previousValue = null;
+          operator = null;
+        } else if (waitingForOperand) {
+          // After an operator, start a new number
+          currentInput = digit;
+          waitingForOperand = false;
+        } else {
+          // Prevent leading zeros (except "0." case)
+          if (currentInput === '0' && digit !== '.') {
+            currentInput = digit;
+          } else if (currentInput.replace(/[-.]/g, '').length < MAX_DIGITS) {
+            currentInput += digit;
+          }
+        }
+        updateDisplay();
+      }
+
+      // Handle decimal point
+      function handleDecimal() {
+        if (justEvaluated) {
+          currentInput = '0.';
+          justEvaluated = false;
+          waitingForOperand = false;
+          expressionText = '';
+          previousValue = null;
+          operator = null;
+        } else if (waitingForOperand) {
+          currentInput = '0.';
+          waitingForOperand = false;
+        } else if (!currentInput.includes('.')) {
+          currentInput += '.';
+        }
+        updateDisplay();
+      }
+
+      // Handle operator (+, −, ×, ÷, %)
+      function handleOperator(opSymbol) {
+        const inputValue = parseFloat(currentInput);
+
+        // If we have a pending operator and we're not waiting for a new operand,
+        // we need to evaluate the previous operation first (operator chaining!)
+        if (operator !== null && !waitingForOperand) {
+          const result = compute(previousValue, inputValue, operator);
+          if (result === null) {
+            showError('Cannot divide by 0');
+            return;
+          }
+          previousValue = result;
+          currentInput = formatNumber(result);
+          expressionText = `${formatNumber(previousValue)} ${opSymbol}`;
+        } else {
+          // First operator or after "=" — store current value
+          previousValue = inputValue;
+          expressionText = `${formatNumber(inputValue)} ${opSymbol}`;
+        }
+
+        operator = opSymbol;
+        waitingForOperand = true;
+        justEvaluated = false;
+
+        // Visual feedback: highlight the active operator
+        highlightActiveOperator(opSymbol);
+        updateDisplay();
+      }
+
+      // Highlight active operator button
+      function highlightActiveOperator(opSymbol) {
+        document.querySelectorAll('.btn.operator').forEach(btn => {
+          btn.classList.remove('active-op');
+        });
+        if (opSymbol) {
+          const activeBtn = document.querySelector(`.btn.operator[data-operator="${opSymbol}"]`);
+          if (activeBtn) activeBtn.classList.add('active-op');
+        }
+      }
+
+      // Compute the result of two operands with an operator
+      function compute(a, b, opSymbol) {
+        const op = operatorMap[opSymbol];
+        if (!op) return null;
+        return op.fn(a, b);
+      }
+
+      // Handle equals
+      function handleEquals() {
+        if (operator === null || waitingForOperand) {
+          // If no operator or we're waiting for a second operand, just keep current
+          if (operator === null) {
+            // No operation pending — just show current
+            expressionText = '';
+            updateDisplay();
+            return;
+          }
+          // If waiting for operand, treat as using the current (previous) value
+          // e.g., 5 + = → 5 + 5 = 10
+        }
+
+        const inputValue = parseFloat(currentInput);
+        const result = compute(previousValue, inputValue, operator);
+
+        if (result === null) {
+          showError('Cannot divide by 0');
+          return;
+        }
+
+        // Show the full expression in history
+        expressionText = `${formatNumber(previousValue)} ${operatorMap[operator].symbol} ${formatNumber(inputValue)} =`;
+
+        // Update state
+        currentInput = formatNumber(result);
+        previousValue = null;
+        operator = null;
+        waitingForOperand = false;
+        justEvaluated = true;
+
+        highlightActiveOperator(null);
+        animateResult();
+        updateDisplay();
+      }
+
+      // Handle clear (C)
+      function handleClear() {
+        currentInput = '0';
+        previousValue = null;
+        operator = null;
+        expressionText = '';
+        justEvaluated = false;
+        waitingForOperand = false;
+        highlightActiveOperator(null);
+        displayEl.classList.remove('error-state');
+        updateDisplay();
+      }
+
+      // Handle backspace
+      function handleBackspace() {
+        if (justEvaluated) {
+          // After equals, backspace clears everything
+          handleClear();
+          return;
+        }
+
+        if (waitingForOperand) {
+          // If waiting for a new operand, backspace cancels the operator
+          operator = null;
+          expressionText = '';
+          waitingForOperand = false;
+          highlightActiveOperator(null);
+          updateDisplay();
+          return;
+        }
+
+        // Remove last character
+        if (currentInput.length > 1) {
+          currentInput = currentInput.slice(0, -1);
+          // If we end up with just "-" or empty, reset to "0"
+          if (currentInput === '' || currentInput === '-') {
+            currentInput = '0';
+          }
+        } else {
+          currentInput = '0';
+        }
+        updateDisplay();
+      }
+
+      // Handle percent (converts current to percentage of previous, or standalone)
+      function handlePercent() {
+        const inputValue = parseFloat(currentInput);
+        if (operator !== null && previousValue !== null) {
+          // e.g., 200 + 10% → 200 + (200 * 0.1) = 200 + 20 = 220
+          const percentValue = previousValue * (inputValue / 100);
+          currentInput = formatNumber(percentValue);
+          waitingForOperand = false;
+          updateDisplay();
+        } else {
+          // Standalone: just divide by 100
+          currentInput = formatNumber(inputValue / 100);
+          updateDisplay();
+        }
+      }
+
+      /* ---------- RIPPLE EFFECT ---------- */
+      function createRipple(event, button) {
+        const ripple = document.createElement('span');
+        ripple.classList.add('ripple');
+        const rect = button.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        ripple.style.width = ripple.style.height = size + 'px';
+        ripple.style.left = (event.clientX - rect.left - size / 2) + 'px';
+        ripple.style.top = (event.clientY - rect.top - size / 2) + 'px';
+        button.appendChild(ripple);
+        setTimeout(() => ripple.remove(), 600);
+      }
+
+      /* ---------- BUTTON CLICK HANDLER (Event Delegation) ---------- */
+      buttonsGrid.addEventListener('click', function(event) {
+        const button = event.target.closest('.btn');
+        if (!button) return;
+
+        // Create ripple effect
+        createRipple(event, button);
+
+        // Determine what kind of button was clicked
+        if (button.dataset.digit !== undefined) {
+          handleDigit(button.dataset.digit);
+        } else if (button.dataset.operator !== undefined) {
+          if (button.dataset.operator === '%') {
+            handlePercent();
+          } else {
+            handleOperator(button.dataset.operator);
+          }
+        } else if (button.dataset.action !== undefined) {
+          switch (button.dataset.action) {
+            case 'clear':
+              handleClear();
+              break;
+            case 'backspace':
+              handleBackspace();
+              break;
+            case 'decimal':
+              handleDecimal();
+              break;
+            case 'equals':
+              handleEquals();
+              break;
+          }
+        }
+      });
+
+      /* ---------- KEYBOARD SUPPORT ---------- */
+      document.addEventListener('keydown', function(event) {
+        const key = event.key;
+
+        // Prevent default browser behavior for keys we handle
+        if (['0','1','2','3','4','5','6','7','8','9','.','+','-','*','/','%','Enter','=','Backspace','Escape','Delete'].includes(key)) {
+          event.preventDefault();
+        }
+
+        // Digits
+        if (/^[0-9]$/.test(key)) {
+          handleDigit(key);
+        }
+        // Decimal point
+        else if (key === '.') {
+          handleDecimal();
+        }
+        // Operators
+        else if (key === '+') {
+          handleOperator('+');
+        } else if (key === '-') {
+          handleOperator('−');
+        } else if (key === '*') {
+          handleOperator('×');
+        } else if (key === '/') {
+          handleOperator('÷');
+        } else if (key === '%') {
+          handlePercent();
+        }
+        // Equals / Enter
+        else if (key === '=' || key === 'Enter') {
+          handleEquals();
+        }
+        // Clear / Escape
+        else if (key === 'Escape' || key === 'Delete') {
+          handleClear();
+        }
+        // Backspace
+        else if (key === 'Backspace') {
+          handleBackspace();
+        }
+      });
+
+      /* ---------- LIVE HUE COLOR CONTROLLER ---------- */
+      hueSlider.addEventListener('input', function() {
+        const hue = this.value;
+        document.documentElement.style.setProperty('--hue', hue);
+      });
+
+      // Also animate the hue automatically on load for a "live coloring" feel
+      let autoHue = 220;
+      let userInteracted = false;
+
+      // Stop auto-animation when user grabs the slider
+      hueSlider.addEventListener('mousedown', () => userInteracted = true);
+      hueSlider.addEventListener('touchstart', () => userInteracted = true);
+
+      setInterval(() => {
+        if (!userInteracted) {
+          autoHue = (autoHue + 0.5) % 360;
+          document.documentElement.style.setProperty('--hue', autoHue);
+          hueSlider.value = autoHue;
+        }
+      }, 100);
+
+      /* ---------- INITIAL STATE ---------- */
+      updateDisplay();
+    })();
+  </script>
+</body>
+</html>

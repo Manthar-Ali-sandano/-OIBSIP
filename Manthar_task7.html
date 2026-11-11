@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aura Auth · Secure Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* ---------- RESET & VARIABLES ---------- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-dark: #07090f;
+      --panel-bg: rgba(18, 22, 35, 0.7);
+      --input-bg: rgba(255, 255, 255, 0.04);
+      --border-light: rgba(255, 255, 255, 0.1);
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --accent-glow: rgba(99, 102, 241, 0.3);
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.1);
+      --success: #10b981;
+      --font-head: 'Space Grotesk', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Ambient Background */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(100px);
+      z-index: -1;
+      opacity: 0.5;
+      animation: float 10s infinite alternate;
+    }
+    .orb-1 {
+      top: -10%; left: -10%;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, #6366f1, transparent 70%);
+    }
+    .orb-2 {
+      bottom: -10%; right: -10%;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, #8b5cf6, transparent 70%);
+      animation-delay: -5s;
+    }
+
+    @keyframes float {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(30px, 40px) scale(1.1); }
+    }
+
+    /* ---------- MAIN CONTAINER ---------- */
+    .app-wrapper {
+      width: 100%;
+      max-width: 420px;
+      padding: 1.5rem;
+      position: relative;
+      z-index: 10;
+    }
+
+    /* Hide/Show sections based on auth state */
+    .page {
+      display: none;
+      animation: slideUp 0.5s ease-out forwards;
+    }
+    .page.active {
+      display: block;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ---------- AUTH CARD (Login & Register) ---------- */
+    .auth-card {
+      background: var(--panel-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-light);
+      border-radius: 24px;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .auth-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .auth-header h2 {
+      font-family: var(--font-head);
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+
+    .auth-header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* Form Inputs */
+    .form-group {
+      margin-bottom: 1.2rem;
+      position: relative;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-wrapper i {
+      position: absolute;
+      left: 1rem;
+      color: var(--text-muted);
+      font-size: 1rem;
+      transition: color var(--transition);
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 1rem 1rem 1rem 2.8rem;
+      background: var(--input-bg);
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      color: var(--text-main);
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      outline: none;
+      transition: all var(--transition);
+    }
+
+    .form-control:focus {
+      border-color: var(--accent);
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 0 0 4px var(--accent-glow);
+    }
+
+    .form-control:focus + i,
+    .form-control:not(:placeholder-shown) + i {
+      color: var(--accent);
+    }
+
+    /* Error/Alert Messages */
+    .alert {
+      display: none;
+      padding: 0.8rem 1rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      margin-bottom: 1.2rem;
+      align-items: center;
+      gap: 8px;
+      animation: shake 0.4s ease;
+    }
+
+    .alert.show {
+      display: flex;
+    }
+
+    .alert-error {
+      background: var(--danger-bg);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .alert-success {
+      background: rgba(16, 185, 129, 0.1);
+      color: #6ee7b7;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    /* Buttons */
+    .btn {
+      width: 100%;
+      padding: 1rem;
+      border: none;
+      border-radius: 12px;
+      font-family: var(--font-body);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px var(--accent-glow);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text-main);
+      border: 1px solid var(--border-light);
+    }
+
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Auth Switch Link */
+    .auth-switch {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .auth-switch a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color var(--transition);
+    }
+
+    .auth-switch a:hover {
+      color: #818cf8;
+      text-decoration: underline;
+    }
+
+    /* ---------- DASHBOARD ---------- */
+    .dashboard-card {
+      background: var(--panel-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-light);
+      border-radius: 24px;
+      padding: 3rem 2rem;
+      text-align: center;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .dash-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      margin: 0 auto 1.5rem;
+      border: 2px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .dashboard-card h2 {
+      font-family: var(--font-head);
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .dashboard-card .user-name {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .dashboard-card p {
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+
+    .dash-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-box {
+      background: var(--input-bg);
+      padding: 1.2rem;
+      border-radius: 12px;
+      border: 1px solid var(--border-light);
+    }
+
+    .stat-box h3 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-box p {
+      font-family: var(--font-head);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin: 0;
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .auth-card {
+        padding: 2rem 1.5rem;
+      }
+      .dashboard-card {
+        padding: 2rem 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Orbs -->
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <main class="app-wrapper">
+
+    <!-- ================= LOGIN PAGE ================= -->
+    <section id="loginPage" class="page">
+      <div class="auth-card">
+        <div class="auth-header">
+          <h2>Welcome Back</h2>
+          <p>Please enter your details to sign in.</p>
+        </div>
+
+        <div id="loginAlert" class="alert alert-error">
+          <i class="fas fa-exclamation-circle"></i> <span>Error message</span>
+        </div>
+
+        <form id="loginForm" novalidate>
+          <div class="form-group">
+            <label for="loginEmail">Email or Username</label>
+            <div class="input-wrapper">
+              <input type="text" id="loginEmail" class="form-control" placeholder="Enter your email" required>
+              <i class="fas fa-envelope"></i>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="loginPassword">Password</label>
+            <div class="input-wrapper">
+              <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required>
+              <i class="fas fa-lock"></i>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-sign-in-alt"></i> Sign In
+          </button>
+        </form>
+
+        <div class="auth-switch">
+          Don't have an account? <a id="toRegister">Create one</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= REGISTER PAGE ================= -->
+    <section id="registerPage" class="page">
+      <div class="auth-card">
+        <div class="auth-header">
+          <h2>Create Account</h2>
+          <p>Join us today. It's quick and easy.</p>
+        </div>
+
+        <div id="registerAlert" class="alert alert-error">
+          <i class="fas fa-exclamation-circle"></i> <span>Error message</span>
+        </div>
+
+        <form id="registerForm" novalidate>
+          <div class="form-group">
+            <label for="regEmail">Email Address</label>
+            <div class="input-wrapper">
+              <input type="email" id="regEmail" class="form-control" placeholder="name@example.com" required>
+              <i class="fas fa-envelope"></i>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="regPassword">Password</label>
+            <div class="input-wrapper">
+              <input type="password" id="regPassword" class="form-control" placeholder="Min 8 chars, 1 number" required>
+              <i class="fas fa-lock"></i>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="regConfirm">Confirm Password</label>
+            <div class="input-wrapper">
+              <input type="password" id="regConfirm" class="form-control" placeholder="Re-enter password" required>
+              <i class="fas fa-check-shield"></i>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-user-plus"></i> Register
+          </button>
+        </form>
+
+        <div class="auth-switch">
+          Already have an account? <a id="toLogin">Sign In</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= DASHBOARD PAGE ================= -->
+    <section id="dashboardPage" class="page">
+      <div class="dashboard-card">
+        <div class="dash-icon">
+          <i class="fas fa-check"></i>
+        </div>
+        <h2>Welcome, <span id="dashUsername" class="user-name">User</span>!</h2>
+        <p>You have successfully authenticated. This is your secure, protected dashboard.</p>
+
+        <div class="dash-stats">
+          <div class="stat-box">
+            <h3>Account Status</h3>
+            <p><i class="fas fa-shield-check" style="color: var(--success); font-size: 1rem;"></i> Active</p>
+          </div>
+          <div class="stat-box">
+            <h3>Session</h3>
+            <p>Secure</p>
+          </div>
+        </div>
+
+        <button id="logoutBtn" class="btn btn-danger">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    (function() {
+      'use strict';
+
+      /* =========================================================
+         SECURE PASSWORD HASHING (SHA-256 + Salt)
+         Uses the native Web Crypto API (No plain text passwords stored)
+         ========================================================= */
+      async function hashPassword(password, salt) {
+        const encoder = new TextEncoder();
+        // Combine salt and password
+        const data = encoder.encode(salt + password);
+        // Hash with SHA-256
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        // Convert to hex string
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      }
+
+      function generateSalt() {
+        const array = new Uint8Array(16);
+        crypto.getRandomValues(array);
+        return Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
+      }
+
+      /* =========================================================
+         LOCAL STORAGE MANAGEMENT
+         ========================================================= */
+      const DB_KEY = 'aura_auth_users_v1';
+      const SESSION_KEY = 'aura_auth_session_v1';
+
+      function getUsers() {
+        const users = localStorage.getItem(DB_KEY);
+        return users ? JSON.parse(users) : [];
+      }
+
+      function saveUsers(users) {
+        localStorage.setItem(DB_KEY, JSON.stringify(users));
+      }
+
+      function createSession(email) {
+        // Generate a pseudo-session token
+        const token = generateSalt() + generateSalt();
+        const session = {
+          email: email,
+          token: token,
+          expiresAt: Date.now() + (1000 * 60 * 60 * 2) // 2 hours
+        };
+        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      }
+
+      function getSession() {
+        const session = localStorage.getItem(SESSION_KEY);
+        if (!session) return null;
+        const parsed = JSON.parse(session);
+        if (Date.now() > parsed.expiresAt) {
+          localStorage.removeItem(SESSION_KEY); // Expired
+          return null;
+        }
+        return parsed;
+      }
+
+      function clearSession() {
+        localStorage.removeItem(SESSION_KEY);
+      }
+
+      /* =========================================================
+         DOM ELEMENTS
+         ========================================================= */
+      const pages = {
+        login: document.getElementById('loginPage'),
+        register: document.getElementById('registerPage'),
+        dashboard: document.getElementById('dashboardPage')
+      };
+
+      const nav = {
+        toRegister: document.getElementById('toRegister'),
+        toLogin: document.getElementById('toLogin')
+      };
+
+      const forms = {
+        login: document.getElementById('loginForm'),
+        register: document.getElementById('registerForm')
+      };
+
+      const alerts = {
+        login: document.getElementById('loginAlert'),
+        register: document.getElementById('registerAlert')
+      };
+
+      const dashUsername = document.getElementById('dashUsername');
+      const logoutBtn = document.getElementById('logoutBtn');
+
+      /* =========================================================
+         UI HELPERS
+         ========================================================= */
+      function showPage(pageName) {
+        Object.values(pages).forEach(p => p.classList.remove('active'));
+        pages[pageName].classList.add('active');
+        
+        // Clear alerts on page switch
+        hideAlert(alerts.login);
+        hideAlert(alerts.register);
+        forms.login.reset();
+        forms.register.reset();
+      }
+
+      function showAlert(alertEl, message, type = 'error') {
+        alertEl.className = `alert alert-${type} show`;
+        alertEl.querySelector('span').textContent = message;
+      }
+
+      function hideAlert(alertEl) {
+        alertEl.classList.remove('show');
+      }
+
+      /* =========================================================
+         AUTH LOGIC: REGISTRATION
+         ========================================================= */
+      forms.register.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideAlert(alerts.register);
+
+        const email = document.getElementById('regEmail').value.trim().toLowerCase();
+        const password = document.getElementById('regPassword').value;
+        const confirm = document.getElementById('regConfirm').value;
+
+        // 1. Basic Validation
+        if (!email || !password || !confirm) {
+          return showAlert(alerts.register, 'Please fill in all fields.');
+        }
+
+        // Email format check (simple regex)
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          return showAlert(alerts.register, 'Please enter a valid email address.');
+        }
+
+        // 2. Password Rules: Min 8 chars, at least 1 number
+        if (password.length < 8) {
+          return showAlert(alerts.register, 'Password must be at least 8 characters long.');
+        }
+        if (!/\d/.test(password)) {
+          return showAlert(alerts.register, 'Password must contain at least one number.');
+        }
+
+        // 3. Passwords Match
+        if (password !== confirm) {
+          return showAlert(alerts.register, 'Passwords do not match.');
+        }
+
+        // 4. Duplicate Check
+        const users = getUsers();
+        if (users.find(u => u.email === email)) {
+          return showAlert(alerts.register, 'An account with this email already exists.');
+        }
+
+        // 5. Hash and Save
+        const salt = generateSalt();
+        const passwordHash = await hashPassword(password, salt);
+
+        users.push({
+          email: email,
+          salt: salt,
+          passwordHash: passwordHash,
+          createdAt: new Date().toISOString()
+        });
+
+        saveUsers(users);
+
+        // 6. Auto-login after registration
+        createSession(email);
+        showPage('dashboard');
+        dashUsername.textContent = email.split('@')[0];
+      });
+
+      /* =========================================================
+         AUTH LOGIC: LOGIN
+         ========================================================= */
+      forms.login.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideAlert(alerts.login);
+
+        const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+        const password = document.getElementById('loginPassword').value;
+
+        if (!email || !password) {
+          return showAlert(alerts.login, 'Please enter both email and password.');
+        }
+
+        // 1. Find User
+        const users = getUsers();
+        const user = users.find(u => u.email === email);
+
+        // 2. Verify Password
+        // SECURITY NOTE: We intentionally show the same error for "user not found" 
+        // and "wrong password" to prevent username enumeration.
+        if (!user) {
+          return showAlert(alerts.login, 'Invalid email or password.');
+        }
+
+        const hash = await hashPassword(password, user.salt);
+        
+        if (hash !== user.passwordHash) {
+          return showAlert(alerts.login, 'Invalid email or password.');
+        }
+
+        // 3. Success: Create Session & Redirect
+        createSession(email);
+        showPage('dashboard');
+        dashUsername.textContent = user.email.split('@')[0];
+      });
+
+      /* =========================================================
+         LOGOUT & SESSION CHECK
+         ========================================================= */
+      logoutBtn.addEventListener('click', () => {
+        clearSession();
+        showPage('login');
+      });
+
+      // Check for existing session on page load
+      function checkSession() {
+        const session = getSession();
+        if (session) {
+          // Re-verify user still exists
+          const user = getUsers().find(u => u.email === session.email);
+          if (user) {
+            showPage('dashboard');
+            dashUsername.textContent = user.email.split('@')[0];
+            return;
+          }
+        }
+        // No valid session, show login
+        showPage('login');
+      }
+
+      /* =========================================================
+         NAVIGATION
+         ========================================================= */
+      nav.toRegister.addEventListener('click', (e) => {
+        e.preventDefault();
+        showPage('register');
+      });
+
+      nav.toLogin.addEventListener('click', (e) => {
+        e.preventDefault();
+        showPage('login');
+      });
+
+      /* =========================================================
+         INITIALIZATION
+         ========================================================= */
+      // Ensure the Web Crypto API is available (requires secure context: https or localhost)
+      if (!window.crypto || !window.crypto.subtle) {
+        alert("Warning: Web Crypto API is not available. Please serve this page via HTTPS or localhost to use secure password hashing.");
+      }
+
+      checkSession();
+
+    })();
+  </script>
+</body>
+</html>
